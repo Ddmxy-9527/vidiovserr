@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+        }
+        .register-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .helptext {
+            display: block;
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+        ul.errorlist {
+            color: #dc3545;
+            padding-left: 0;
+            list-style: none;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .login-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            text-decoration: none;
+            color: #333;
+            font-size: 1.5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .back-arrow:hover {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <a href="#" class="back-arrow" onclick="history.back(); return false;">&lt;</a>
+        <h2>Create Account</h2>
+        <form method="post" novalidate id="registerForm">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                    {% if field.name == 'email' %}
+                        {{ field }}
+                        <button type="button" id="sendCodeBtn" style="margin-top:0.5rem;background:#007bff;">Send Code</button>
+                        <div id="sendCodeMsg" style="color:#dc3545;font-size:0.9rem;margin-top:0.25rem;"></div>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}
+                        <span class="helptext">{{ field.help_text }}</span>
+                    {% endif %}
+                    {% if field.errors %}
+                        <ul class="errorlist">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit">Register</button>
+        </form>
+        <div class="login-link">
+            Already have an account? <a href="{% url 'login' %}">Login here</a>
+        </div>
+    </div>
+    <script>
+        (function(){
+            function getCookie(name) {
+                let value = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            value = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return value;
+            }
+            const btn = document.getElementById('sendCodeBtn');
+            const msg = document.getElementById('sendCodeMsg');
+            const emailInput = document.getElementById('id_email');
+            btn && btn.addEventListener('click', function(){
+                msg.textContent = '';
+                const email = emailInput ? emailInput.value.trim() : '';
+                if (!email) {
+                    msg.textContent = 'Please enter email first';
+                    return;
+                }
+                fetch('{% url "send_verification_code" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: new URLSearchParams({email})
+                }).then(r => r.json()).then(data => {
+                    msg.style.color = data.ok ? '#28a745' : '#dc3545';
+                    msg.textContent = data.msg || (data.ok ? 'Sent' : 'Failed');
+                }).catch(() => {
+                    msg.style.color = '#dc3545';
+                    msg.textContent = 'Failed';
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+Django>=5.2.1
+wsproto==1.2.0
+gunicorn
+whitenoise

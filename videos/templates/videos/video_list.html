@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="video-grid">
+    {% for video in videos %}
+    <div class="video-card" onclick="window.location.href='{% url 'video_detail' video.id %}'">
+        <div class="thumbnail-container">
+            {% if video.thumbnail %}
+                <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="thumbnail-image">
+            {% else %}
+                <div class="thumbnail-image" style="display:flex;align-items:center;justify-content:center;color:white;background:#333;">
+                    No Thumbnail
+                </div>
+            {% endif %}
+            <div class="duration-badge" data-src="{{ video.video_file.url }}">{{ video.duration }}</div>
+        </div>
+        <div class="video-info">
+            <div class="video-title">{{ video.title }}</div>
+            <div class="video-meta">{{ video.created_at|date:"M d, Y" }}</div>
+        </div>
+    </div>
+    {% empty %}
+    <p>No videos available.</p>
+    {% endfor %}
+</div>
+<script>
+    (function () {
+        function fmt(totalSec) {
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = Math.floor(totalSec % 60);
+            return h > 0
+                ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+                : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+        const badges = document.querySelectorAll('.duration-badge');
+        badges.forEach(badge => {
+            const current = badge.textContent.trim();
+            if (current && current !== '0:00:00' && current !== '0:00') return;
+            const src = badge.dataset.src;
+            if (!src) return;
+            const v = document.createElement('video');
+            v.preload = 'metadata';
+            v.src = src;
+            v.addEventListener('loadedmetadata', function () {
+                if (!isNaN(v.duration) && isFinite(v.duration) && v.duration > 0) {
+                    badge.textContent = fmt(Math.round(v.duration));
+                }
+            });
+            // Prevent downloading full video data
+            v.addEventListener('error', function(){});
+        });
+    })();
+</script>
+{% endblock %}
